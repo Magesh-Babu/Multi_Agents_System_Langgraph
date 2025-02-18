@@ -270,16 +270,28 @@ builder.add_node("News_Agent", news_node)
 builder.add_node("Advisor_Agent", advisor_node)
 
 graph = builder.compile(checkpointer=memory)
-config = {"configurable": {"thread_id": "1"}}
+config_1 = {"configurable": {"thread_id": "1"}}
 
 USER_QUESTION = "Give your financial advise on stock TSLA?"
 
 events = graph.stream(
     {"messages": [{"role": "user", "content": USER_QUESTION}]},
-    config,
+    config_1,
     stream_mode="values",
 )
 for event in events:
     if "messages" in event:
         event["messages"][-1].pretty_print()
-        
+
+config_2 = {"configurable": {"thread_id": "2"}}
+
+user_input = "Hi"
+
+events = graph.stream(
+    {"messages": [{"role": "user", "content": user_input}]},
+    config_2,
+    stream_mode="values",
+)
+for event in events:
+    if "messages" in event:
+        event["messages"][-1].pretty_print()
