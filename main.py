@@ -5,8 +5,9 @@ This module defines a reactive AI agent using LangGraph's state management
 and LangChain's AI models. It includes tools for document processing, 
 vector storage, and financial data retrieval.
 """
+
 import os
-from typing import Literal
+from typing import Literal, List, Union, Annotated, Sequence
 from langgraph.types import Command
 from langgraph.graph import MessagesState, StateGraph, START, END
 from langgraph.prebuilt import create_react_agent
@@ -14,6 +15,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from typing_extensions import TypedDict
 from langchain_core.messages import AIMessage
 from langchain_openai.chat_models import AzureChatOpenAI
+from langchain_community.tools.tavily_search import TavilySearchResults
 from pydantic import BaseModel
 from langchain.tools import tool
 from rag_tool import split_documents, create_vectorstore
@@ -22,16 +24,19 @@ from finance_tool import FinancialDataFetcher
 AZURE_GPT_API = os.getenv("AZURE_GPT_API")
 AZURE_GPT_ENDPOINT = os.getenv("AZURE_GPT_ENDPOINT")
 
+
 # Pydantic schema for the retriever tool
 class RagToolSchema(BaseModel):
     """
     Schema for RAG (Retrieval-Augmented Generation) tool input.
 
-    Defines the expected input structure for the RAG tool, 
+    Defines the expected input structure for the RAG tool,
     including a question and a financial ticker symbol.
     """
+
     question: str
     ticker: str
+
 
 # Tool to retrieve semantically similar documents based on a user question
 @tool(args_schema=RagToolSchema)
@@ -40,7 +45,7 @@ def retriever_tool(question: str, ticker: str) -> str:
     Tool to retrieve semantically similar documents based on a user question.
 
     This tool fetches the latest financial news articles for a given ticker,
-    processes them into chunks, and stores them in a vector database. It then 
+    processes them into chunks, and stores them in a vector database. It then
     retrieves the most relevant articles based on the user's query.
 
     Args:
@@ -81,18 +86,21 @@ def retriever_tool(question: str, ticker: str) -> str:
         print(f"Error in retriever_tool: {e}")
         return "An error occurred while processing your request."
 
+
 class ToolSchema(BaseModel):
     """
     Schema for finance tool input.
 
-    Defines the expected input structure for the methods of finance tool, 
+    Defines the expected input structure for the methods of finance tool,
     which includes financial ticker symbol.
     """
+
     query: str
+
 
 @tool(args_schema=ToolSchema)
 def income_statement_tool(query):
-    '''Tool to retrieve the income statement of past 5 years from the company stock ticker'''
+    """Tool to retrieve the income statement of past 5 years from the company stock ticker"""
     try:
         print("\nUSING INCOME_STMT_TOOL\n")
         fetcher = FinancialDataFetcher(query)
@@ -101,9 +109,10 @@ def income_statement_tool(query):
         print(f"Error in income_statement_tool: {e}")
         return None
 
+
 @tool(args_schema=ToolSchema)
 def balance_sheet_tool(query):
-    '''Tool to retrieve the balance sheet of past 5 years from the company stock ticker'''
+    """Tool to retrieve the balance sheet of past 5 years from the company stock ticker"""
     try:
         print("\nUSING BALANCE_SHEET TOOL\n")
         fetcher = FinancialDataFetcher(query)
@@ -112,9 +121,10 @@ def balance_sheet_tool(query):
         print(f"Error in balance_sheet_tool: {e}")
         return None
 
+
 @tool(args_schema=ToolSchema)
 def cashflow_tool(query):
-    '''Tool to retrieve the cash flow details of past 5 years from the company stock ticker'''
+    """Tool to retrieve the cash flow details of past 5 years from the company stock ticker"""
     try:
         print("\nUSING CASHFLOW TOOL\n")
         fetcher = FinancialDataFetcher(query)
@@ -123,9 +133,10 @@ def cashflow_tool(query):
         print(f"Error in cashflow_tool: {e}")
         return None
 
+
 @tool(args_schema=ToolSchema)
-def basic_finance_tool(query):
-    '''Tool to retrieve the financial ratios/details from the company stock ticker'''
+def finance_ratio_tool(query):
+    """Tool to retrieve the financial ratios/details from the company stock ticker"""
     try:
         print("\nUSING RATIOS TOOL\n")
         fetcher = FinancialDataFetcher(query)
@@ -133,6 +144,7 @@ def basic_finance_tool(query):
     except Exception as e:
         print(f"Error in basic_finance_tool: {e}")
         return None
+
 
 try:
     model = AzureChatOpenAI(
@@ -146,29 +158,54 @@ except Exception as e:
     raise RuntimeError(f"Failed to initialize AzureChatOpenAI: {e}") from e
 
 # Define available agents
-members = ["Finance_Agent", "News_Agent"]
+members = ["Finance_Agent", "News_Agent", "__end__"]
 
-# Create system prompt for supervisor
-system_prompt = (
-    "You are a financial advisor tasked with managing a conversation between the"
-    f" following workers: {members}. Given the following user request,"
-    " respond with the worker to act next. Each worker will perform a"
-    " task and respond with their results and status. When finished,"
-    " respond with FINISH."
-)
 
 # Define router type for structured output
 class Router(TypedDict):
-    """Worker to route to next. If no workers needed, route to FINISH."""
-    next: Literal["Finance_Agent", "News_Agent", "FINISH"]
-    
+    """Worker to route to next."""
+    next_worker: List[Literal["Finance_Agent", "News_Agent"]]
 
-def advisor_node(state: MessagesState) -> Command[Literal["Finance_Agent", "News_Agent", "__end__"]]:
+
+class ConversationalResponse(TypedDict):
+    """Respond in a conversational manner. Be kind and helpful."""
+    response: Annotated[str, ..., "A conversational response to the user's query"]
+
+class FinalResponse(TypedDict):
+    """
+    Represents the final output of a system, which can either be:
+    
+    Router type, determining the next worker to handle the process.
+    ConversationalResponse type, providing a user-friendly response.
+
+    """
+    final_output: Union[Router, ConversationalResponse]
+
+
+# Router Agent
+web_search_tool = TavilySearchResults(max_results=2)
+tools = [web_search_tool]
+ROUTER_AGENT_PROMPT = (
+    "You are tasked with managing a conversation among the following workers: "
+    f"{members}. Based on the user's request, determine which worker(s) should handle the query next. "
+    "If the query involves income statement, balance sheet, cash flow statement and financial ratio, include 'Finance_Agent' in your answer. "
+    "If the query pertains to news or current events, include 'News_Agent' in your answer. "
+    "If the query is general, answer in conversational manner."
+    "Your response should be either list of agent names or coversational response."
+)
+router_agent = create_react_agent(
+    model, tools=tools, prompt=ROUTER_AGENT_PROMPT, response_format=FinalResponse
+)
+
+
+def router_node(
+    state: MessagesState,
+    ) -> Command[Union[List[Literal["Finance_Agent", "News_Agent", "__end__"]]]]:
     """
     Determines the next agent or endpoint based on the user's query.
 
-    This function processes the current conversation state, invokes the 
-    routing model, and decides whether to route the query to the Finance 
+    This function processes the current conversation state, invokes the
+    routing model, and decides whether to route the query to the Finance
     Agent, News Agent, or terminate the process.
 
     Args:
@@ -178,49 +215,65 @@ def advisor_node(state: MessagesState) -> Command[Literal["Finance_Agent", "News
         Command: A command directing the next step in the workflow.
     """
     try:
-        messages = [
-            {"role": "system", "content": system_prompt},
-        ] + state["messages"]
-        response = model.with_structured_output(Router).invoke(messages)
-        goto = response["next"]
-        print(f"Next Worker: {goto}")
-        if goto == "FINISH":
-            goto = END
-        return Command(goto=goto)
+        response = router_agent.invoke(state)
+        print("\nThis is from router node: ", response)
+        # goto = response["next"]
+        output = response["messages"][-1].content
+        print(f"Next Worker: {type(output)}")
+        if output == ["FINISH"]:
+            output = END
+        command = Command(
+            update={
+                "messages": [
+                    AIMessage(
+                        content=response["messages"][-1].content, name="Router_Agent"
+                    )
+                ]
+            },
+            goto=[],
+        )
+        return command
     except Exception as e:
-        print(f"Error in advisor_node: {e}")
+        print(f"Error in router_node: {e}")
         return Command(goto=END)
 
 
-tools = [income_statement_tool, balance_sheet_tool, cashflow_tool, basic_finance_tool]
+# Finance Agent
+tools = [income_statement_tool, balance_sheet_tool, cashflow_tool, finance_ratio_tool]
 FINANCE_AGENT_PROMPT = "You are responsible to provide financial analysis of stock ticker using provided tools"
 
 finance_agent = create_react_agent(model, tools=tools, prompt=FINANCE_AGENT_PROMPT)
 
-def finance_node(state: MessagesState) -> Command[Literal["Advisor_Agent"]]:
+
+def finance_node(state: MessagesState):
     """
     Processes financial queries and updates the conversation state.
 
-    This function invokes the Finance Agent to handle financial queries, 
-    updates the conversation state with the agent's response, and directs 
-    the flow back to the Advisor Agent.
+    This function invokes the Finance Agent to handle financial queries,
+    updates the conversation state with the agent's response, and directs
+    the flow to the Final Agent.
 
     Args:
         state (MessagesState): The current conversation state.
 
     Returns:
-        Command: A command updating the conversation and routing to the Advisor Agent.
+        Command: A command updating the conversation and routing to the Final Agent.
     """
     try:
         result = finance_agent.invoke(state)
-        return Command(
+        # print("\nThis is from finance node -before command: ",result)
+        command = Command(
             update={
                 "messages": [
-                    AIMessage(content=result["messages"][-1].content, name="Finance_Agent")
+                    AIMessage(
+                        content=result["messages"][-1].content, name="Finance_Agent"
+                    )
                 ]
             },
-            goto="Advisor_Agent",
+            goto="Final_Agent",
         )
+        print("\nThis is from finance node: ", command)
+        return command
     except Exception as e:
         print(f"Error in finance_node: {e}")
         return Command(goto=END)
@@ -231,51 +284,124 @@ NEWS_AGENT_PROMPT = "You are responsible to provide lastest new analysis of stoc
 
 news_agent = create_react_agent(model, tools=tools, prompt=NEWS_AGENT_PROMPT)
 
-def news_node(state: MessagesState) -> Command[Literal["Advisor_Agent"]]:
+
+def news_node(state: MessagesState):
     """
     Processes news-related queries and updates the conversation state.
 
-    This function invokes the News Agent to handle news queries, 
-    updates the conversation state with the agent's response, and routes 
-    the flow back to the Advisor Agent.
+    This function invokes the News Agent to handle news queries,
+    updates the conversation state with the agent's response, and routes
+    the flow to the Final Agent.
 
     Args:
         state (MessagesState): The current conversation state.
 
     Returns:
-        Command: A command updating the conversation and routing to the Advisor Agent.
+        Command: A command updating the conversation and routing to the Final Agent.
     """
     try:
         result = news_agent.invoke(state)
-        return Command(
+        command = Command(
             update={
                 "messages": [
                     AIMessage(content=result["messages"][-1].content, name="News_Agent")
                 ]
             },
-            goto="Advisor_Agent",
+            goto="Final_Agent",
         )
+        print("\nThis is from news node: ", command)
+        return command
     except Exception as e:
         print(f"Error in news_node: {e}")
         return Command(goto=END)
-    
 
+
+FINAL_AGENT_PROMPT = (
+    "You are responsible for combining the outputs from the Finance, News and General Agents and providing "
+    "a final summarized answer for the user."
+)
+# Here we create the Combine Agent. It doesn't need additional tools.
+final_agent = create_react_agent(model, tools=[], prompt=FINAL_AGENT_PROMPT)
+
+
+def final_node(state: MessagesState):
+    """
+    Aggregates responses from the Finance, News and General agents, passes them to the Final Agent,
+    and returns a final summarized result.
+    """
+    try:
+        result = final_agent.invoke(state)
+        command = Command(
+            update={
+                "messages": [
+                    AIMessage(
+                        content=result["messages"][-1].content, name="Final_Agent"
+                    )
+                ]
+            },
+            goto=END,
+        )
+        print("\nThis is from final node: ", command)
+        return command
+    except Exception as e:
+        print(f"Error in final_node: {e}")
+        return Command(goto=END)
+
+
+def condition(state: MessagesState) -> Sequence[str]:
+    """
+    Defining the conditions to add as parameter in the conditional edge formation.
+
+    Args:
+        state (MessagesState): The current state containing message history.
+
+    Returns:
+        Sequence[str]: A list of agent names or ["__end__"] if no match is found.
+    """
+    try:
+        last_message = state["messages"][-1].content
+        #print("last_message:", last_message)
+
+        if last_message == "['Finance_Agent']":
+            #print("state from condition1:", state)
+            return ["Finance_Agent"]
+
+        if last_message == "['News_Agent']":
+            #print("state from condition2:", state)
+            return ["News_Agent"]
+
+        if last_message == "['Finance_Agent', 'News_Agent']":
+            #print("state from condition3:", state)
+            return ["Finance_Agent", "News_Agent"]
+
+        return ["__end__"]
+    except (KeyError, IndexError, AttributeError) as e:
+        print(f"Error in condition function: {e}")
+        return ["__end__"]
 
 memory = MemorySaver()
 
 builder = StateGraph(MessagesState)
-builder.add_edge(START, "Advisor_Agent")
+builder.add_edge(START, "Router_Agent")
+builder.add_node("Router_Agent", router_node)
 builder.add_node("Finance_Agent", finance_node)
 builder.add_node("News_Agent", news_node)
-builder.add_node("Advisor_Agent", advisor_node)
+builder.add_node("Final_Agent", final_node)
+
+builder.add_conditional_edges("Router_Agent", condition, members)
+
+builder.add_edge("Finance_Agent", "Final_Agent")
+builder.add_edge("News_Agent", "Final_Agent")
+builder.add_edge("Final_Agent", END)
 
 graph = builder.compile(checkpointer=memory)
+
 config_1 = {"configurable": {"thread_id": "1"}}
 
-USER_QUESTION = "Give your financial advise on stock TSLA?"
+USER_QUESTION_1 = "Give your financial advise on stock TSLA?"
 
 events = graph.stream(
-    {"messages": [{"role": "user", "content": USER_QUESTION}]},
+    {"messages": [{"role": "user", "content": USER_QUESTION_1}]},
     config_1,
     stream_mode="values",
 )
@@ -285,10 +411,10 @@ for event in events:
 
 config_2 = {"configurable": {"thread_id": "2"}}
 
-user_input = "Hi"
+USER_QUESTION_2 = "Hi"
 
 events = graph.stream(
-    {"messages": [{"role": "user", "content": user_input}]},
+    {"messages": [{"role": "user", "content": USER_QUESTION_2}]},
     config_2,
     stream_mode="values",
 )
