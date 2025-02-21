@@ -153,6 +153,7 @@ try:
         api_version="2024-05-01-preview",
         api_key=AZURE_GPT_API,
         temperature=0.2,
+        streaming=True,
     )
 except Exception as e:
     raise RuntimeError(f"Failed to initialize AzureChatOpenAI: {e}") from e
@@ -198,9 +199,7 @@ router_agent = create_react_agent(
 )
 
 
-def router_node(
-    state: MessagesState,
-    ) -> Command[Union[List[Literal["Finance_Agent", "News_Agent", "__end__"]]]]:
+def router_node(state: MessagesState):
     """
     Determines the next agent or endpoint based on the user's query.
 
@@ -212,30 +211,21 @@ def router_node(
         state (MessagesState): The current conversation state containing messages.
 
     Returns:
-        Command: A command directing the next step in the workflow.
+        messages: Extracts last message of AIMessage Object.
     """
     try:
         response = router_agent.invoke(state)
-        print("\nThis is from router node: ", response)
-        # goto = response["next"]
+        #print("\nThis is from router node: ", response)
         output = response["messages"][-1].content
-        print(f"Next Worker: {type(output)}")
+        #print(f"Next Worker: {output}")
         if output == ["FINISH"]:
             output = END
-        command = Command(
-            update={
-                "messages": [
-                    AIMessage(
-                        content=response["messages"][-1].content, name="Router_Agent"
-                    )
-                ]
-            },
-            goto=[],
-        )
-        return command
+        return {"messages": [
+                     AIMessage(content=response["messages"][-1].content, name="Router_Agent")
+                 ]}
     except Exception as e:
         print(f"Error in router_node: {e}")
-        return Command(goto=END)
+        return END
 
 
 # Finance Agent
@@ -261,7 +251,7 @@ def finance_node(state: MessagesState):
     """
     try:
         result = finance_agent.invoke(state)
-        # print("\nThis is from finance node -before command: ",result)
+        #print("\nThis is from finance node -before command: ",result)
         command = Command(
             update={
                 "messages": [
@@ -272,7 +262,7 @@ def finance_node(state: MessagesState):
             },
             goto="Final_Agent",
         )
-        print("\nThis is from finance node: ", command)
+        #print("\nThis is from finance node: ", command)
         return command
     except Exception as e:
         print(f"Error in finance_node: {e}")
@@ -309,7 +299,7 @@ def news_node(state: MessagesState):
             },
             goto="Final_Agent",
         )
-        print("\nThis is from news node: ", command)
+        #print("\nThis is from news node: ", command)
         return command
     except Exception as e:
         print(f"Error in news_node: {e}")
@@ -341,7 +331,7 @@ def final_node(state: MessagesState):
             },
             goto=END,
         )
-        print("\nThis is from final node: ", command)
+        #print("\nThis is from final node: ", command)
         return command
     except Exception as e:
         print(f"Error in final_node: {e}")
