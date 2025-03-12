@@ -4,6 +4,10 @@
 
 This repository contains a stateful AI agents system designed for financial  stock analysis and news retrieval using LangGraph and LangChain. It integrates document processing, vector storage, and financial data retrieval, leveraging Yahoo Finance and OpenAI's Azure ChatGPT models to provide insightful financial analysis and the latest news about stock market trends.
 
+### Graph structure
+
+<img src="graph.png" width="400">
+
 #### Features
 
 1. Financial Data Retrieval: Uses yfinance to fetch key financial metrics such as income statements, balance sheets, cash flow data, and financial ratios.
