@@ -20,6 +20,7 @@ from pydantic import BaseModel
 from langchain.tools import tool
 from rag_tool import split_documents, create_vectorstore
 from finance_tool import FinancialDataFetcher
+from pyscbwrapper import SCB
 
 AZURE_GPT_API = os.getenv("AZURE_GPT_API")
 AZURE_GPT_ENDPOINT = os.getenv("AZURE_GPT_ENDPOINT")
@@ -87,7 +88,7 @@ def retriever_tool(question: str, ticker: str) -> str:
         return "An error occurred while processing your request."
 
 
-class ToolSchema(BaseModel):
+class RatioToolSchema(BaseModel):
     """
     Schema for finance tool input.
 
@@ -98,7 +99,7 @@ class ToolSchema(BaseModel):
     query: str
 
 
-@tool(args_schema=ToolSchema)
+@tool(args_schema=RatioToolSchema)
 def income_statement_tool(query):
     """Tool to retrieve the income statement of past 5 years from the company stock ticker"""
     try:
@@ -110,7 +111,7 @@ def income_statement_tool(query):
         return None
 
 
-@tool(args_schema=ToolSchema)
+@tool(args_schema=RatioToolSchema)
 def balance_sheet_tool(query):
     """Tool to retrieve the balance sheet of past 5 years from the company stock ticker"""
     try:
@@ -122,7 +123,7 @@ def balance_sheet_tool(query):
         return None
 
 
-@tool(args_schema=ToolSchema)
+@tool(args_schema=RatioToolSchema)
 def cashflow_tool(query):
     """Tool to retrieve the cash flow details of past 5 years from the company stock ticker"""
     try:
@@ -134,7 +135,7 @@ def cashflow_tool(query):
         return None
 
 
-@tool(args_schema=ToolSchema)
+@tool(args_schema=RatioToolSchema)
 def finance_ratio_tool(query):
     """Tool to retrieve the financial ratios/details from the company stock ticker"""
     try:
@@ -157,6 +158,37 @@ try:
     )
 except Exception as e:
     raise RuntimeError(f"Failed to initialize AzureChatOpenAI: {e}") from e
+
+class RegionToolSchema(BaseModel):
+    region: Literal['Sweden', 'Greater Stockholm',
+    'Greater Gothenburg',
+    'Greater Malmö',
+    'Stockholm production county',
+    'Eastern Central Sweden',
+    'Småland with the islands',
+    'South Sweden',
+    'West Sweden',
+    'Northern Central Sweden',
+    'Central Norrland',
+    'Upper Norrland']
+
+@tool(args_schema=RegionToolSchema)
+def housing_price_index_tool(region):
+    """Tool to retrieve housing price index data from Sweden Statistics."""
+
+    try:
+        # Initialize the SCB API wrapper in English.
+        scb = SCB("en", "BO", "BO0501A", "FastpiPSRegAr")
+        # Construct and send the query based on the selected dataset.
+        scb.set_query(
+        region=[region],
+        year=["2020", "2021", "2022", "2023", "2024"],
+    )
+        data = scb.get_data()
+        print("data from tool:", data)
+        return data
+    except Exception as e:
+        return f"An error occurred while retrieving data: {str(e)}"    
 
 # Define available agents
 members = ["Finance_Agent", "News_Agent", "__end__"]
