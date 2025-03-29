@@ -337,6 +337,41 @@ def news_node(state: MessagesState):
         print(f"Error in news_node: {e}")
         return Command(goto=END)
 
+tools = [housing_price_index_tool]
+REAL_ESTATE_AGENT_PROMPT = "You are responsible to provide housing price analysis in sweden using provided tool"
+
+real_estate_agent = create_react_agent(model, tools=tools, prompt=REAL_ESTATE_AGENT_PROMPT)
+
+def real_estate_node(state: MessagesState):
+    """
+    Processes housing price-related queries and updates the conversation state.
+
+    This function invokes the Real Estate Agent to handle housing queries,
+    updates the conversation state with the agent's response, and routes
+    the flow to the Final Agent.
+
+    Args:
+        state (MessagesState): The current conversation state.
+
+    Returns:
+        Command: A command updating the conversation and routing to the Final Agent.
+    """
+    try:
+        result = real_estate_agent.invoke(state)
+        command = Command(
+            update={
+                "messages": [
+                    AIMessage(content=result["messages"][-1].content, name="Real_Estate_Agent")
+                ]
+            },
+            goto="Final_Agent",
+        )
+        #print("\nThis is from real_estate_node: ", command)
+        return command
+    except Exception as e:
+        print(f"Error in real_estate_node: {e}")
+        return Command(goto=END)
+
 
 FINAL_AGENT_PROMPT = (
     "You are responsible for combining the outputs from the Finance, News and General Agents and providing "
