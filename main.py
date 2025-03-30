@@ -191,13 +191,13 @@ def housing_price_index_tool(region):
         return f"An error occurred while retrieving data: {str(e)}"    
 
 # Define available agents
-members = ["Finance_Agent", "News_Agent", "__end__"]
+members = ["Finance_Agent", "News_Agent", "Real_Estate_Agent", "__end__"]
 
 
 # Define router type for structured output
 class Router(TypedDict):
     """Worker to route to next."""
-    next_worker: List[Literal["Finance_Agent", "News_Agent"]]
+    next_worker: List[Literal["Finance_Agent", "News_Agent", "Real_Estate_Agent"]]
 
 
 class ConversationalResponse(TypedDict):
@@ -217,17 +217,18 @@ class FinalResponse(TypedDict):
 
 # Router Agent
 web_search_tool = TavilySearchResults(max_results=2)
-tools = [web_search_tool]
+router_agent_tools = [web_search_tool]
 ROUTER_AGENT_PROMPT = (
     "You are tasked with managing a conversation among the following workers: "
     f"{members}. Based on the user's request, determine which worker(s) should handle the query next. "
     "If the query involves income statement, balance sheet, cash flow statement and financial ratio, include 'Finance_Agent' in your answer. "
     "If the query pertains to news or current events, include 'News_Agent' in your answer. "
+    "If the query is about housing price situation in Sweden, include 'Real_Estate_Agent' in your answer. "
     "If the query is general, answer in conversational manner."
     "Your response should be either list of agent names or coversational response."
 )
 router_agent = create_react_agent(
-    model, tools=tools, prompt=ROUTER_AGENT_PROMPT, response_format=FinalResponse
+    model, tools=router_agent_tools, prompt=ROUTER_AGENT_PROMPT, response_format=FinalResponse
 )
 
 
@@ -261,10 +262,10 @@ def router_node(state: MessagesState):
 
 
 # Finance Agent
-tools = [income_statement_tool, balance_sheet_tool, cashflow_tool, finance_ratio_tool]
+finance_agent_tools = [income_statement_tool, balance_sheet_tool, cashflow_tool, finance_ratio_tool]
 FINANCE_AGENT_PROMPT = "You are responsible to provide financial analysis of stock ticker using provided tools"
 
-finance_agent = create_react_agent(model, tools=tools, prompt=FINANCE_AGENT_PROMPT)
+finance_agent = create_react_agent(model, tools=finance_agent_tools, prompt=FINANCE_AGENT_PROMPT)
 
 
 def finance_node(state: MessagesState):
@@ -301,10 +302,10 @@ def finance_node(state: MessagesState):
         return Command(goto=END)
 
 
-tools = [retriever_tool]
+new_agent_tools = [retriever_tool]
 NEWS_AGENT_PROMPT = "You are responsible to provide lastest new analysis of stock ticker using provided tool"
 
-news_agent = create_react_agent(model, tools=tools, prompt=NEWS_AGENT_PROMPT)
+news_agent = create_react_agent(model, tools=new_agent_tools, prompt=NEWS_AGENT_PROMPT)
 
 
 def news_node(state: MessagesState):
@@ -337,10 +338,10 @@ def news_node(state: MessagesState):
         print(f"Error in news_node: {e}")
         return Command(goto=END)
 
-tools = [housing_price_index_tool]
+real_estate_agent_tools = [housing_price_index_tool, web_search_tool]
 REAL_ESTATE_AGENT_PROMPT = "You are responsible to provide housing price analysis in sweden using provided tool"
 
-real_estate_agent = create_react_agent(model, tools=tools, prompt=REAL_ESTATE_AGENT_PROMPT)
+real_estate_agent = create_react_agent(model, tools=real_estate_agent_tools, prompt=REAL_ESTATE_AGENT_PROMPT)
 
 def real_estate_node(state: MessagesState):
     """
@@ -364,7 +365,7 @@ def real_estate_node(state: MessagesState):
                     AIMessage(content=result["messages"][-1].content, name="Real_Estate_Agent")
                 ]
             },
-            goto="Final_Agent",
+            goto=END,
         )
         #print("\nThis is from real_estate_node: ", command)
         return command
@@ -427,8 +428,12 @@ def condition(state: MessagesState) -> Sequence[str]:
             #print("state from condition2:", state)
             return ["News_Agent"]
 
-        if last_message == "['Finance_Agent', 'News_Agent']":
+        if last_message == "['Real_Estate_Agent']":
             #print("state from condition3:", state)
+            return ["Real_Estate_Agent"]
+
+        if last_message == "['Finance_Agent', 'News_Agent']":
+            #print("state from condition4:", state)
             return ["Finance_Agent", "News_Agent"]
 
         return ["__end__"]
@@ -443,12 +448,14 @@ builder.add_edge(START, "Router_Agent")
 builder.add_node("Router_Agent", router_node)
 builder.add_node("Finance_Agent", finance_node)
 builder.add_node("News_Agent", news_node)
+builder.add_node("Real_Estate_Agent", real_estate_node)
 builder.add_node("Final_Agent", final_node)
 
 builder.add_conditional_edges("Router_Agent", condition, members)
 
 builder.add_edge("Finance_Agent", "Final_Agent")
 builder.add_edge("News_Agent", "Final_Agent")
+builder.add_edge("Real_Estate_Agent", END)
 builder.add_edge("Final_Agent", END)
 
 graph = builder.compile(checkpointer=memory)
