@@ -148,7 +148,7 @@ def housing_price_index_tool(region):
         # Construct and send the query based on the selected dataset.
         scb.set_query(
         region=[region],
-        year=["2020", "2021", "2022", "2023", "2024"],
+        year=["2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"],
     )
         data = scb.get_data()
         print("data from tool:", data)

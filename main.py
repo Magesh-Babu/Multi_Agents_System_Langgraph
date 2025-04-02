@@ -16,15 +16,21 @@ from typing_extensions import TypedDict
 from langchain_core.messages import AIMessage
 from langchain_openai.chat_models import AzureChatOpenAI
 from langchain_community.tools.tavily_search import TavilySearchResults
+from tools_list import (
+    income_statement_tool,
+    balance_sheet_tool,
+    cashflow_tool,
+    finance_ratio_tool,
+    retriever_tool,
+    housing_price_index_tool,
+)
 
 AZURE_GPT_API = os.getenv("AZURE_GPT_API")
 AZURE_GPT_ENDPOINT = os.getenv("AZURE_GPT_ENDPOINT")
-
-
 try:
     model = AzureChatOpenAI(
         azure_endpoint=AZURE_GPT_ENDPOINT,
-        azure_deployment="gpt-4o-mini",
+        azure_deployment="gpt-4o",
         api_version="2024-05-01-preview",
         api_key=AZURE_GPT_API,
         temperature=0.2,
@@ -42,8 +48,6 @@ members = ["Finance_Agent", "News_Agent", "Real_Estate_Agent", "__end__"]
 class Router(TypedDict):
     """Worker to route to next."""
     next_worker: List[Literal["Finance_Agent", "News_Agent", "Real_Estate_Agent"]]
-
-
 class ConversationalResponse(TypedDict):
     """Respond in a conversational manner. Be kind and helpful."""
     response: Annotated[str, ..., "A conversational response to the user's query"]
@@ -57,7 +61,6 @@ class FinalResponse(TypedDict):
 
     """
     final_output: Union[Router, ConversationalResponse]
-
 
 # Router Agent
 web_search_tool = TavilySearchResults(max_results=2)
@@ -108,7 +111,6 @@ def router_node(state: MessagesState):
 # Finance Agent
 finance_agent_tools = [income_statement_tool, balance_sheet_tool, cashflow_tool, finance_ratio_tool]
 FINANCE_AGENT_PROMPT = "You are responsible to provide financial analysis of stock ticker using provided tools"
-
 finance_agent = create_react_agent(model, tools=finance_agent_tools, prompt=FINANCE_AGENT_PROMPT)
 
 
@@ -148,9 +150,7 @@ def finance_node(state: MessagesState):
 
 new_agent_tools = [retriever_tool]
 NEWS_AGENT_PROMPT = "You are responsible to provide lastest new analysis of stock ticker using provided tool"
-
 news_agent = create_react_agent(model, tools=new_agent_tools, prompt=NEWS_AGENT_PROMPT)
-
 
 def news_node(state: MessagesState):
     """
@@ -184,7 +184,6 @@ def news_node(state: MessagesState):
 
 real_estate_agent_tools = [housing_price_index_tool, web_search_tool]
 REAL_ESTATE_AGENT_PROMPT = "You are responsible to provide housing price analysis in sweden using provided tool"
-
 real_estate_agent = create_react_agent(model, tools=real_estate_agent_tools, prompt=REAL_ESTATE_AGENT_PROMPT)
 
 def real_estate_node(state: MessagesState):
@@ -286,17 +285,15 @@ def condition(state: MessagesState) -> Sequence[str]:
         return ["__end__"]
 
 memory = MemorySaver()
-
 builder = StateGraph(MessagesState)
-builder.add_edge(START, "Router_Agent")
 builder.add_node("Router_Agent", router_node)
 builder.add_node("Finance_Agent", finance_node)
 builder.add_node("News_Agent", news_node)
 builder.add_node("Real_Estate_Agent", real_estate_node)
 builder.add_node("Final_Agent", final_node)
 
+builder.add_edge(START, "Router_Agent")
 builder.add_conditional_edges("Router_Agent", condition, members)
-
 builder.add_edge("Finance_Agent", "Final_Agent")
 builder.add_edge("News_Agent", "Final_Agent")
 builder.add_edge("Real_Estate_Agent", END)
@@ -305,9 +302,7 @@ builder.add_edge("Final_Agent", END)
 graph = builder.compile(checkpointer=memory)
 
 config_1 = {"configurable": {"thread_id": "1"}}
-
 USER_QUESTION_1 = "Give your financial advise on stock TSLA?"
-
 events = graph.stream(
     {"messages": [{"role": "user", "content": USER_QUESTION_1}]},
     config_1,
@@ -318,9 +313,7 @@ for event in events:
         event["messages"][-1].pretty_print()
 
 config_2 = {"configurable": {"thread_id": "2"}}
-
 USER_QUESTION_2 = "Hi"
-
 events = graph.stream(
     {"messages": [{"role": "user", "content": USER_QUESTION_2}]},
     config_2,
