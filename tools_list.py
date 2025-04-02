@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from langchain.tools import tool
+from typing import Literal, List, Union, Annotated, Sequence
 from rag_tool import split_documents, create_vectorstore
 from finance_tool import FinancialDataFetcher
 from pyscbwrapper import SCB
