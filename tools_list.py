@@ -98,7 +98,7 @@ def income_statement_tool(ticker):
     Tool to retrieve the income statement of past 5 years from the company's stock ticker.
 
     Args:
-        ticker (str): The stock ticker symbol for retrieving relevant news.
+        ticker (str): The stock ticker symbol for retrieving relevant data.
 
     Returns:
         dataframe: The income statement data.    
@@ -114,7 +114,15 @@ def income_statement_tool(ticker):
 
 @tool(args_schema=RatioToolSchema)
 def balance_sheet_tool(ticker):
-    """Tool to retrieve the balance sheet of past 5 years from the company stock ticker"""
+    """
+    Tool to retrieve the balance sheet of past 5 years from the company's stock ticker.
+
+    Args:
+        ticker (str): The stock ticker symbol for retrieving relevant data.
+
+    Returns:
+        dataframe: The balance sheet data.
+    """
     try:
         print("\nUSING BALANCE_SHEET TOOL\n")
         fetcher = FinancialDataFetcher(ticker)
@@ -126,7 +134,15 @@ def balance_sheet_tool(ticker):
 
 @tool(args_schema=RatioToolSchema)
 def cashflow_tool(ticker):
-    """Tool to retrieve the cash flow details of past 5 years from the company stock ticker"""
+    """
+    Tool to retrieve the cash flow details of past 5 years from the company's stock ticker
+
+    Args:
+        ticker (str): The stock ticker symbol for retrieving relevant data.
+
+    Returns:
+        dataframe: The cash flow data.    
+    """
     try:
         print("\nUSING CASHFLOW TOOL\n")
         fetcher = FinancialDataFetcher(ticker)
@@ -138,7 +154,15 @@ def cashflow_tool(ticker):
 
 @tool(args_schema=RatioToolSchema)
 def finance_ratio_tool(ticker):
-    """Tool to retrieve the financial ratios/details from the company stock ticker"""
+    """
+    Tool to retrieve the financial ratios/details from the company's stock ticker
+    
+    Args:
+        ticker (str): The stock ticker symbol for retrieving relevant data.
+
+    Returns:
+        dataframe: The finance ratio data.    
+    """
     try:
         print("\nUSING RATIOS TOOL\n")
         fetcher = FinancialDataFetcher(ticker)
@@ -150,9 +174,18 @@ def finance_ratio_tool(ticker):
 
 @tool(args_schema=RegionToolSchema)
 def housing_price_index_tool(region):
-    """Tool to retrieve housing price index data from Sweden Statistics."""
+    """
+    Tool to retrieve housing price index data from Sweden Statistics.
+    
+    Args:
+        region (str): Predefined regions of sweden in the SCB database.
+
+    Returns:
+        dataframe: The housing price index for the particular region.    
+    """
 
     try:
+        print("\nUSING HOUSING PRICE TOOL\n")
         # Initialize the SCB API wrapper in English.
         scb = SCB("en", "BO", "BO0501A", "FastpiPSRegAr")
         # Construct and send the query based on the selected dataset.
