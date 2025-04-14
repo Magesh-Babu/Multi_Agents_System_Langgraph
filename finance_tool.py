@@ -129,4 +129,24 @@ class FinancialDataFetcher:
         except Exception as e:
             print(f"Error fetching basic financials: {e}")
             return {}
+        
+    def get_price_history(self, period='1y'):
+        """
+        Retrieves the price history of the stock for a specified period.
+
+        Args:
+            period (str): The time period for which to fetch the price history. 
+                            Default is '1y' (1 year).
+
+        Returns:
+            DataFrame: A Pandas DataFrame containing the historical price data.
+        """
+        try:
+            if not period:
+                raise ValueError("Period cannot be empty.")
+            output = self.ticker.history(period=period, interval="1d")
+            return output
+        except Exception as e:
+            print(f"Error fetching price history: {e}")
+            return None        
     
