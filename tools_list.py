@@ -194,24 +194,24 @@ def housing_price_index_tool(region):
         year=["2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"],
     )
         data = scb.get_data()
-        print("data from tool:", data)
+        print("data from SCB tool:", data)
         return data
     except Exception as e:
         return f"An error occurred while retrieving data: {str(e)}"
 
 @tool(args_schema=RatioToolSchema)
-def price_history_tool(ticker):
+def technical_indicators_tool(ticker):
     """
-    Tool to retrieve the price history of the stock for a specified period.
+    Tool to calculates various technical indicators such as SMA, RSI, MACD, and Bollinger Bands.
     
     Args:
         ticker (str): The stock ticker symbol for retrieving relevant data.
 
     Returns:
-        dataframe: The price history data.    
+        dataframe: The price history data with calculated indicators.    
     """
     try:
-        print("\nUSING PRICE_HISTORY TOOL\n")
+        print("\nUSING TECHNICAL INDICATORS TOOL\n")
         fetcher = FinancialDataFetcher(ticker)
         data = fetcher.get_price_history()
 
@@ -239,7 +239,9 @@ def price_history_tool(ticker):
         data['BB_Upper']  = data['BB_Middle'] + 2 * data['BB_Std']
         data['BB_Lower']  = data['BB_Middle'] - 2 * data['BB_Std']
 
-        return data[['Close','SMA_50','RSI_14','MACD','Signal_9','BB_Upper','BB_Middle','BB_Lower']]
+        data['Close_Price'] = data['Close']
+
+        return data[['Close_Price','SMA_50','RSI_14','MACD','Signal_9','BB_Upper','BB_Middle','BB_Lower']]
     except Exception as e:
         print(f"Error in price_history_tool: {e}")
         return None    
