@@ -197,4 +197,49 @@ def housing_price_index_tool(region):
         print("data from tool:", data)
         return data
     except Exception as e:
-        return f"An error occurred while retrieving data: {str(e)}"    
+        return f"An error occurred while retrieving data: {str(e)}"
+
+@tool(args_schema=RatioToolSchema)
+def price_history_tool(ticker):
+    """
+    Tool to retrieve the price history of the stock for a specified period.
+    
+    Args:
+        ticker (str): The stock ticker symbol for retrieving relevant data.
+
+    Returns:
+        dataframe: The price history data.    
+    """
+    try:
+        print("\nUSING PRICE_HISTORY TOOL\n")
+        fetcher = FinancialDataFetcher(ticker)
+        data = fetcher.get_price_history()
+
+        # 2.1 Simple Moving Average (SMA)
+        data['SMA_50'] = data['Close'].rolling(window=50).mean()
+
+        # 2.2 Relative Strength Index (RSI)
+        delta = data['Close'].diff()
+        gain = delta.where(delta > 0, 0)
+        loss = -delta.where(delta < 0, 0)
+        avg_gain = gain.rolling(window=14).mean()
+        avg_loss = loss.rolling(window=14).mean()
+        rs = avg_gain / avg_loss
+        data['RSI_14'] = 100 - (100 / (1 + rs))
+
+        # 2.3 Moving Average Convergence Divergence (MACD)
+        ema_fast = data['Close'].ewm(span=12, adjust=False).mean()
+        ema_slow = data['Close'].ewm(span=26, adjust=False).mean()
+        data['MACD']      = ema_fast - ema_slow
+        data['Signal_9']  = data['MACD'].ewm(span=9, adjust=False).mean()
+
+        # 2.4 Bollinger Bands
+        data['BB_Middle'] = data['Close'].rolling(window=20).mean()
+        data['BB_Std']    = data['Close'].rolling(window=20).std()
+        data['BB_Upper']  = data['BB_Middle'] + 2 * data['BB_Std']
+        data['BB_Lower']  = data['BB_Middle'] - 2 * data['BB_Std']
+
+        return data[['Close','SMA_50','RSI_14','MACD','Signal_9','BB_Upper','BB_Middle','BB_Lower']]
+    except Exception as e:
+        print(f"Error in price_history_tool: {e}")
+        return None    
