@@ -161,7 +161,7 @@ def finance_ratio_tool(ticker):
         ticker (str): The stock ticker symbol for retrieving relevant data.
 
     Returns:
-        dataframe: The finance ratio data.    
+        dict: The finance ratio data.    
     """
     try:
         print("\nUSING RATIOS TOOL\n")
@@ -171,6 +171,25 @@ def finance_ratio_tool(ticker):
         print(f"Error in basic_finance_tool: {e}")
         return None
 
+@tool(args_schema=RatioToolSchema)
+def risk_assessment_tool(ticker):
+    """
+    Tool to retrieve the risk metrices like market-based and leverage & liquidity metrices 
+    from the company's stock ticker
+    
+    Args:
+        ticker (str): The stock ticker symbol for retrieving relevant data.
+
+    Returns:
+        dict: The financial risk metrices data.    
+    """
+    try:
+        print("\nUSING RISK ASSESSMENT TOOL\n")
+        fetcher = FinancialDataFetcher(ticker)
+        return fetcher.get_risk_financials()
+    except Exception as e:
+        print(f"Error in risk_finance_tool: {e}")
+        return None
 
 @tool(args_schema=RegionToolSchema)
 def housing_price_index_tool(region):

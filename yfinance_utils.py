@@ -129,7 +129,29 @@ class FinancialDataFetcher:
         except Exception as e:
             print(f"Error fetching basic financials: {e}")
             return {}
-        
+
+    def get_risk_financials(self):
+        """
+        Retrieves key financial ratios and metrics of the company for the risk assessment.
+
+        Returns:
+            dict: A dictionary containing various financial metrics which are Market-based
+            risk metric and leverage & liquidity risk metrics.
+        """
+        try:
+            output = self.ticker.info
+            if not output:
+                raise ValueError("No financial information available for this ticker.")
+            keys = [
+                'beta', 'trailingPE', 'priceToBook', 'trailingEps',
+                'quickRatio', 'debtToEquity', 'currentRatio',
+            ]
+            data = {key: output.get(key, 'N/A') for key in keys}
+            return data
+        except Exception as e:
+            print(f"Error fetching risk financials: {e}")
+            return {}
+
     def get_price_history(self, period='1y'):
         """
         Retrieves the price history of the stock for a specified period.
