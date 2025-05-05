@@ -6,7 +6,7 @@ This repository contains a stateful AI agents system designed for financial  sto
 
 ### Graph structure
 
-<img src="MAS_graph.png" width="400">
+<img src="MAS_graph.png" width="800">
 
 #### Features
 
