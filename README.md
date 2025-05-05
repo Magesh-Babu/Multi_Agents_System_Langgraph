@@ -2,24 +2,40 @@
 
 ## Overview
 
-This repository contains a stateful AI agents system designed for financial  stock analysis and news retrieval using LangGraph and LangChain. It integrates document processing, vector storage, and financial data retrieval, leveraging Yahoo Finance and OpenAI's Azure ChatGPT models to provide insightful financial analysis and the latest news about stock market trends.
+This repository contains a modular, **multi-agent AI system** for performing comprehensive financial and stock analysis, built using **LangGraph** and **LangChain**. The system is designed to handle real-world investor queries by orchestrating specialized AI agents that analyze fundamental data, technical trends, sentiment signals, market risk, and real estate conditions. It integrates document processing, financial data APIs, real-time web search, and vector storage to produce context-rich, data-driven answers.
+
 
 ### Graph structure
 
 <img src="MAS_graph.png" width="800">
 
-#### Features
 
-1. Financial Data Retrieval: Uses yfinance to fetch key financial metrics such as income statements, balance sheets, cash flow data, and financial ratios.
-2. News Retrieval: Fetches the latest financial news using Yahoo Finance and processes them for retrieval-based question answering.
-3. Vector Store for Semantic Search: Utilizes document chunking and vector storage to efficiently retrieve relevant financial information.
-4. Stateful AI Agent: Built with LangGraph to maintain conversation state and route user queries to appropriate modules.
-5. Azure OpenAI Integration: Uses Azure ChatGPT (gpt-4o-mini) for intelligent query processing and routing.
+### 🔁 Architecture Overview
 
-#### Repository Structure
+The system follows a **graph-based multi-agent architecture** where a central **Router Agent** intelligently delegates user queries to specialized agents. A final **Aggregator Agent** synthesizes the outputs and produces a complete, human-readable response.
 
-1. main.py: The core script implementing the AI agents using LangGraph. It handles query processing, document retrieval, and financial analysis workflows.
+Agents include:
+- 📘 Fundamental Analysis Agent
+- 📈 Technical Analysis Agent
+- 💬 Sentiment Analysis Agent
+- ⚠️ Risk Assessment Agent
+- 🏘️ Real Estate Agent
 
-2. finance_tool.py: A module for retrieving financial data from Yahoo Finance, including income statements, balance sheets, and cash flow data.
+### 🚀 Features
 
-3. rag_tool.py: Implements a retrieval-augmented generation (RAG) pipeline for extracting relevant news articles and performing semantic search.
+- **🧾 Financial Data Retrieval (yfinance)**  
+  Automatically fetches and analyzes key financial metrics: income statements, balance sheets, cash flow reports, and financial ratios.
+
+- **📰 News-Based Sentiment Analysis (RAG)**  
+  Retrieves financial news using yfinance and processes it using a **sentence transformer embedding model** (`BAAI/bge-small-en-v1.5`) and **ChromaDB** for vector search. Enables semantic search and context-aware sentiment insights.
+
+- **🌍 Real Estate Data Integration (SCB)**  
+  Uses the `pyscbwrapper` library to pull housing price index data from **Statistics Sweden (SCB)**, supporting geographically specific real estate evaluations.
+
+- **🌐 Web Search Tool (Tavily)**  
+  Enables real-time financial trend updates and sentiment tracking via API-based web search.
+
+- **🧠 LangGraph + Azure OpenAI Integration**  
+  Built on **LangGraph** with `create_react_agent`, supporting memory, tool-calling, and stateful reasoning. Uses **Azure-hosted GPT-4o-mini** for intelligent, multi-turn query understanding and planning.
+
+
