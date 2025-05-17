@@ -62,16 +62,16 @@ def retriever_tool(question: str, ticker: str) -> str:
             articles are found.
     """
     try:
-        print("\nUSING NEWS_RAG TOOL\n")
+        print("\nUSING NEWS_RETRIEVER TOOL\n")
         # Fetch and process the latest news articles
         fetcher = FinancialDataFetcher(ticker)
         docs = fetcher.get_latest_news()
-        if not docs:
+         if not docs:
             return "No news articles found for the specified ticker."
 
         # Split documents into chunks
         splits = split_documents(docs)
-        print(f"Split the documents into {len(splits)} chunks.")
+        #print(f"Split the documents into {len(splits)} chunks.")
 
         # Create or load the vector store
         collection_name = f"{ticker}_news_collection"
@@ -104,7 +104,7 @@ def income_statement_tool(ticker):
         dataframe: The income statement data.    
     """
     try:
-        print("\nUSING INCOME_STMT_TOOL\n")
+        print("\nUSING INCOME_STATEMENT TOOL\n")
         fetcher = FinancialDataFetcher(ticker)
         return fetcher.get_income_statement()
     except Exception as e:
@@ -144,7 +144,7 @@ def cashflow_tool(ticker):
         dataframe: The cash flow data.    
     """
     try:
-        print("\nUSING CASHFLOW TOOL\n")
+        print("\nUSING CASH_FLOW TOOL\n")
         fetcher = FinancialDataFetcher(ticker)
         return fetcher.get_cashflow()
     except Exception as e:
@@ -164,7 +164,7 @@ def finance_ratio_tool(ticker):
         dict: The finance ratio data.    
     """
     try:
-        print("\nUSING RATIOS TOOL\n")
+        print("\nUSING FINANCE_RATIO TOOL\n")
         fetcher = FinancialDataFetcher(ticker)
         return fetcher.get_basic_financials()
     except Exception as e:
@@ -184,7 +184,7 @@ def risk_assessment_tool(ticker):
         dict: The financial risk metrices data.    
     """
     try:
-        print("\nUSING RISK ASSESSMENT TOOL\n")
+        print("\nUSING RISK_ASSESSMENT TOOL\n")
         fetcher = FinancialDataFetcher(ticker)
         return fetcher.get_risk_financials()
     except Exception as e:
@@ -204,7 +204,7 @@ def housing_price_index_tool(region):
     """
 
     try:
-        print("\nUSING HOUSING PRICE TOOL\n")
+        print("\nUSING HOUSING_PRICE TOOL\n")
         # Initialize the SCB API wrapper in English.
         scb = SCB("en", "BO", "BO0501A", "FastpiPSRegAr")
         # Construct and send the query based on the selected dataset.
@@ -213,7 +213,7 @@ def housing_price_index_tool(region):
         year=["2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"],
     )
         data = scb.get_data()
-        print("data from SCB tool:", data)
+        #print("data from SCB tool:", data)
         return data
     except Exception as e:
         return f"An error occurred while retrieving data: {str(e)}"
@@ -230,7 +230,7 @@ def technical_indicators_tool(ticker):
         dataframe: The price history data with calculated indicators.    
     """
     try:
-        print("\nUSING TECHNICAL INDICATORS TOOL\n")
+        print("\nUSING TECHNICAL_INDICATORS TOOL\n")
         fetcher = FinancialDataFetcher(ticker)
         data = fetcher.get_price_history()
 
