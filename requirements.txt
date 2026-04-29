@@ -33,3 +33,7 @@ pydantic==2.10.6
 pydantic-settings==2.8.1
 python-dotenv==1.1.0
 typing-extensions==4.12.2
+
+# API
+fastapi==0.115.9
+uvicorn==0.34.2
