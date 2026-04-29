@@ -1,22 +1,13 @@
-"""
-Module for retrieving financial data and news using Yahoo Finance and LangChain.
-
-This module provides functionalities for fetching stock-related financial data 
-using `yfinance` and loading news articles using `WebBaseLoader` from LangChain.
-
-Imports:
-    os: Provides access to operating system functionalities.
-    yfinance: Used for retrieving financial data from Yahoo Finance.
-    WebBaseLoader: Loads web-based documents for processing.
-"""
 import os
 import yfinance
 from langchain_community.document_loaders.web_base import WebBaseLoader
+
 COOKIE_YAHOO = os.getenv("COOKIE_YAHOO")
 
+
 class FinancialDataFetcher:
-    """
-    A class for fetching financial data using Yahoo Finance."""
+    """A class for fetching financial data using Yahoo Finance."""
+
     def __init__(self, ticker_symbol):
         """
         Initializes the FinancialDataFetcher with a stock ticker symbol.
@@ -31,7 +22,6 @@ class FinancialDataFetcher:
             self.ticker = yfinance.Ticker(ticker_symbol)
         except Exception as e:
             raise RuntimeError(f"Failed to initialize FinancialDataFetcher: {e}") from e
-
 
     def get_latest_news(self):
         """
@@ -66,7 +56,7 @@ class FinancialDataFetcher:
         Retrieves key financial metrics from the company's income statement.
 
         Returns:
-            DataFrame: A Pandas DataFrame containing EBITDA, EPS, Net Income, 
+            DataFrame: A Pandas DataFrame containing EBITDA, EPS, Net Income,
                        Gross Profit, Total Revenue, and Operating Income.
         """
         try:
@@ -94,7 +84,7 @@ class FinancialDataFetcher:
 
     def get_cashflow(self):
         """
-        Retrieves the company's cash flow data, including free cash flow 
+        Retrieves the company's cash flow data, including free cash flow
         and operating cash flow.
 
         Returns:
@@ -112,7 +102,7 @@ class FinancialDataFetcher:
         Retrieves key financial ratios and metrics of the company.
 
         Returns:
-            dict: A dictionary containing various financial metrics such as P/E ratio, 
+            dict: A dictionary containing various financial metrics such as P/E ratio,
                   market cap, debt-to-equity ratio, and cash flow data.
         """
         try:
@@ -135,8 +125,8 @@ class FinancialDataFetcher:
         Retrieves key financial ratios and metrics of the company for the risk assessment.
 
         Returns:
-            dict: A dictionary containing various financial metrics which are Market-based
-            risk metric and leverage & liquidity risk metrics.
+            dict: A dictionary containing Market-based risk metrics and
+            leverage & liquidity risk metrics.
         """
         try:
             output = self.ticker.info
@@ -157,7 +147,7 @@ class FinancialDataFetcher:
         Retrieves the price history of the stock for a specified period.
 
         Args:
-            period (str): The time period for which to fetch the price history. 
+            period (str): The time period for which to fetch the price history.
                             Default is '1y' (1 year).
 
         Returns:
@@ -170,5 +160,4 @@ class FinancialDataFetcher:
             return output
         except Exception as e:
             print(f"Error fetching price history: {e}")
-            return None        
-    
+            return None
