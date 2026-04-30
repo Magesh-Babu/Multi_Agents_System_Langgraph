@@ -27,5 +27,8 @@ chroma_db/
 .idea/
 .vscode/
 
+# Claude Code assistant file (local only)
+CLAUDE.md
+
 # Logs
 *.log
