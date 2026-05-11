@@ -30,5 +30,13 @@ chroma_db/
 # Claude Code assistant file (local only)
 CLAUDE.md
 
+# Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Test cache
+.pytest_cache/
+
 # Logs
 *.log

@@ -266,7 +266,7 @@ def condition(state: MessagesState) -> Sequence[str]:
         final_output = structured_response.get("final_output", {})
         next_workers = final_output.get("next_worker", [])
 
-        if isinstance(next_workers, list) and all(isinstance(w, str) for w in next_workers):
+        if isinstance(next_workers, list) and next_workers and all(isinstance(w, str) for w in next_workers):
             return next_workers
 
         return ["__end__"]

@@ -3,6 +3,7 @@ from typing import AsyncIterator
 
 from fastapi import FastAPI, Depends
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from api.schemas import AnalyzeRequest, AnalyzeResponse
 from api.dependencies import get_graph
@@ -11,6 +12,15 @@ app = FastAPI(
     title="Stock Analyst — Multi-Agent API",
     description="LangGraph-powered multi-agent system for financial and real estate analysis.",
     version="1.0.0",
+)
+
+# Allow the Next.js frontend (localhost:3000) to call this API from the browser.
+# Without this, the browser blocks cross-origin requests (CORS policy).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

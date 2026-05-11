@@ -1,0 +1,24 @@
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Environment
+.env
+.venv/
+venv/
+
+# Runtime-generated (mounted as volume)
+chroma_db/
+
+# Not needed in the image
+notebooks/
+tests/
+*.md
+.DS_Store
+MAS_graph.png
