@@ -1,3 +1,4 @@
+import logging
 from typing import Sequence
 from langgraph.graph import MessagesState, END
 from langgraph.prebuilt import create_react_agent
@@ -7,6 +8,8 @@ from langchain_openai.chat_models import AzureChatOpenAI
 from langchain_community.tools.tavily_search import TavilySearchResults
 
 from stock_analyst.config.settings import settings
+
+logger = logging.getLogger(__name__)
 from stock_analyst.graph.state import FinalResponse
 from stock_analyst.agents.prompts import (
     ROUTER_AGENT_PROMPT,
@@ -109,7 +112,7 @@ def router_node(state: MessagesState):
             AIMessage(content=_router_response["messages"][-1].content, name="Router_Agent")
         ]}
     except Exception as e:
-        print(f"Error in router_node: {e}")
+        logger.error("router_node failed", exc_info=True)
         return END
 
 
@@ -132,7 +135,7 @@ def fundamental_node(state: MessagesState):
             goto="Final_Aggregator_Agent",
         )
     except Exception as e:
-        print(f"Error in fundamental_node: {e}")
+        logger.error("fundamental_node failed", exc_info=True)
         return Command(goto=END)
 
 
@@ -155,7 +158,7 @@ def sentiment_node(state: MessagesState):
             goto="Final_Aggregator_Agent",
         )
     except Exception as e:
-        print(f"Error in sentiment_node: {e}")
+        logger.error("sentiment_node failed", exc_info=True)
         return Command(goto=END)
 
 
@@ -178,7 +181,7 @@ def technical_node(state: MessagesState):
             goto="Final_Aggregator_Agent",
         )
     except Exception as e:
-        print(f"Error in technical_node: {e}")
+        logger.error("technical_node failed", exc_info=True)
         return Command(goto=END)
 
 
@@ -201,7 +204,7 @@ def risk_assessment_node(state: MessagesState):
             goto="Final_Aggregator_Agent",
         )
     except Exception as e:
-        print(f"Error in risk_assessment_node: {e}")
+        logger.error("risk_assessment_node failed", exc_info=True)
         return Command(goto=END)
 
 
@@ -224,7 +227,7 @@ def real_estate_node(state: MessagesState):
             goto="Final_Aggregator_Agent",
         )
     except Exception as e:
-        print(f"Error in real_estate_node: {e}")
+        logger.error("real_estate_node failed", exc_info=True)
         return Command(goto=END)
 
 
@@ -247,7 +250,7 @@ def final_node(state: MessagesState):
             goto=END,
         )
     except Exception as e:
-        print(f"Error in final_node: {e}")
+        logger.error("final_node failed", exc_info=True)
         return Command(goto=END)
 
 
@@ -271,5 +274,5 @@ def condition(state: MessagesState) -> Sequence[str]:
 
         return ["__end__"]
     except Exception as e:
-        print(f"Error in condition function: {e}")
+        logger.error("condition function failed", exc_info=True)
         return ["__end__"]

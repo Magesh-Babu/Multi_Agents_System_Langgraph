@@ -1,8 +1,11 @@
+import logging
 from pydantic import BaseModel
 from langchain.tools import tool
 from stock_analyst.utils.yfinance_utils import FinancialDataFetcher
 from stock_analyst.utils.rag_utils import split_documents, create_vectorstore
 from stock_analyst.config.settings import settings
+
+logger = logging.getLogger(__name__)
 
 
 class RagToolSchema(BaseModel):
@@ -29,7 +32,7 @@ def retriever_tool(question: str, ticker: str) -> str:
             articles are found.
     """
     try:
-        print("\nUSING NEWS_RETRIEVER TOOL\n")
+        logger.debug("Tool invoked: news_retriever | ticker=%s", ticker)
         fetcher = FinancialDataFetcher(ticker)
         docs = fetcher.get_latest_news()
         if not docs:
@@ -49,5 +52,5 @@ def retriever_tool(question: str, ticker: str) -> str:
 
         return "\n\n".join(doc.page_content for doc in retriever_result)
     except Exception as e:
-        print(f"Error in retriever_tool: {e}")
+        logger.error("retriever_tool failed | ticker=%s", ticker, exc_info=True)
         return "An error occurred while processing your request."

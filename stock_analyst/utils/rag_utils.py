@@ -1,9 +1,12 @@
+import logging
 from typing import List
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings.sentence_transformer import SentenceTransformerEmbeddings
 from stock_analyst.config.settings import settings
+
+logger = logging.getLogger(__name__)
 
 
 def split_documents(documents: List[Document]) -> List[Document]:
@@ -26,7 +29,7 @@ def split_documents(documents: List[Document]) -> List[Document]:
         )
         return text_splitter.split_documents(documents)
     except Exception as e:
-        print(f"Error in split_documents: {e}")
+        logger.error("split_documents failed", exc_info=True)
         return []
 
 
@@ -67,5 +70,5 @@ def create_vectorstore(documents: List[Document], collection_name: str, persist_
 
         return vectorstore
     except Exception as e:
-        print(f"Error in create_vectorstore: {e}")
+        logger.error("create_vectorstore failed | collection=%s", collection_name, exc_info=True)
         return None

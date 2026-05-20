@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     retrieval_k: int = 2
     chroma_db_path: str = "./chroma_db"
 
+    # Logging — set to DEBUG in development to see tool traces
+    log_level: str = "INFO"
+
     class Config:
         env_file = ".env"
 

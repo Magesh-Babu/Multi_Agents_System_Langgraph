@@ -1,6 +1,9 @@
+import logging
 import os
 import yfinance
 from langchain_community.document_loaders.web_base import WebBaseLoader
+
+logger = logging.getLogger(__name__)
 
 COOKIE_YAHOO = os.getenv("COOKIE_YAHOO")
 
@@ -48,7 +51,7 @@ class FinancialDataFetcher:
             docs = loader.load()
             return docs
         except Exception as e:
-            print(f"Error fetching latest news: {e}")
+            logger.error("get_latest_news failed | ticker=%s", self.ticker_symbol, exc_info=True)
             return []
 
     def get_income_statement(self):
@@ -65,7 +68,7 @@ class FinancialDataFetcher:
             ]
             return output
         except Exception as e:
-            print(f"Error fetching income statement: {e}")
+            logger.error("get_income_statement failed | ticker=%s", self.ticker_symbol, exc_info=True)
             return None
 
     def get_balance_sheet(self):
@@ -79,7 +82,7 @@ class FinancialDataFetcher:
             output = self.ticker.balance_sheet.loc[['Total Debt']]
             return output
         except Exception as e:
-            print(f"Error fetching balance sheet: {e}")
+            logger.error("get_balance_sheet failed | ticker=%s", self.ticker_symbol, exc_info=True)
             return None
 
     def get_cashflow(self):
@@ -94,7 +97,7 @@ class FinancialDataFetcher:
             output = self.ticker.cashflow.loc[['Free Cash Flow', 'Operating Cash Flow']]
             return output
         except Exception as e:
-            print(f"Error fetching cash flow: {e}")
+            logger.error("get_cashflow failed | ticker=%s", self.ticker_symbol, exc_info=True)
             return None
 
     def get_basic_financials(self):
@@ -117,7 +120,7 @@ class FinancialDataFetcher:
             data = {key: output.get(key, 'N/A') for key in keys}
             return data
         except Exception as e:
-            print(f"Error fetching basic financials: {e}")
+            logger.error("get_basic_financials failed | ticker=%s", self.ticker_symbol, exc_info=True)
             return {}
 
     def get_risk_financials(self):
@@ -139,7 +142,7 @@ class FinancialDataFetcher:
             data = {key: output.get(key, 'N/A') for key in keys}
             return data
         except Exception as e:
-            print(f"Error fetching risk financials: {e}")
+            logger.error("get_risk_financials failed | ticker=%s", self.ticker_symbol, exc_info=True)
             return {}
 
     def get_price_history(self, period='1y'):
@@ -159,5 +162,5 @@ class FinancialDataFetcher:
             output = self.ticker.history(period=period, interval="1d")
             return output
         except Exception as e:
-            print(f"Error fetching price history: {e}")
+            logger.error("get_price_history failed | ticker=%s", self.ticker_symbol, exc_info=True)
             return None
