@@ -1,6 +1,9 @@
+import logging
 from pydantic import BaseModel
 from langchain.tools import tool
 from stock_analyst.utils.yfinance_utils import FinancialDataFetcher
+
+logger = logging.getLogger(__name__)
 
 
 class RatioToolSchema(BaseModel):
@@ -20,7 +23,7 @@ def technical_indicators_tool(ticker):
         dataframe: The price history data with calculated indicators.
     """
     try:
-        print("\nUSING TECHNICAL_INDICATORS TOOL\n")
+        logger.debug("Tool invoked: technical_indicators | ticker=%s", ticker)
         fetcher = FinancialDataFetcher(ticker)
         data = fetcher.get_price_history()
 
@@ -52,5 +55,5 @@ def technical_indicators_tool(ticker):
 
         return data[['Close_Price', 'SMA_50', 'RSI_14', 'MACD', 'Signal_9', 'BB_Upper', 'BB_Middle', 'BB_Lower']]
     except Exception as e:
-        print(f"Error in price_history_tool: {e}")
+        logger.error("technical_indicators_tool failed | ticker=%s", ticker, exc_info=True)
         return None

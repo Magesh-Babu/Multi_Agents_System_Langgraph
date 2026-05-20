@@ -1,6 +1,9 @@
+import logging
 from pydantic import BaseModel
 from langchain.tools import tool
 from stock_analyst.utils.yfinance_utils import FinancialDataFetcher
+
+logger = logging.getLogger(__name__)
 
 
 class RatioToolSchema(BaseModel):
@@ -20,11 +23,11 @@ def income_statement_tool(ticker):
         dataframe: The income statement data.
     """
     try:
-        print("\nUSING INCOME_STATEMENT TOOL\n")
+        logger.debug("Tool invoked: income_statement | ticker=%s", ticker)
         fetcher = FinancialDataFetcher(ticker)
         return fetcher.get_income_statement()
     except Exception as e:
-        print(f"Error in income_statement_tool: {e}")
+        logger.error("income_statement_tool failed | ticker=%s", ticker, exc_info=True)
         return None
 
 
@@ -40,11 +43,11 @@ def balance_sheet_tool(ticker):
         dataframe: The balance sheet data.
     """
     try:
-        print("\nUSING BALANCE_SHEET TOOL\n")
+        logger.debug("Tool invoked: balance_sheet | ticker=%s", ticker)
         fetcher = FinancialDataFetcher(ticker)
         return fetcher.get_balance_sheet()
     except Exception as e:
-        print(f"Error in balance_sheet_tool: {e}")
+        logger.error("balance_sheet_tool failed | ticker=%s", ticker, exc_info=True)
         return None
 
 
@@ -60,11 +63,11 @@ def cashflow_tool(ticker):
         dataframe: The cash flow data.
     """
     try:
-        print("\nUSING CASH_FLOW TOOL\n")
+        logger.debug("Tool invoked: cashflow | ticker=%s", ticker)
         fetcher = FinancialDataFetcher(ticker)
         return fetcher.get_cashflow()
     except Exception as e:
-        print(f"Error in cashflow_tool: {e}")
+        logger.error("cashflow_tool failed | ticker=%s", ticker, exc_info=True)
         return None
 
 
@@ -80,11 +83,11 @@ def finance_ratio_tool(ticker):
         dict: The finance ratio data.
     """
     try:
-        print("\nUSING FINANCE_RATIO TOOL\n")
+        logger.debug("Tool invoked: finance_ratio | ticker=%s", ticker)
         fetcher = FinancialDataFetcher(ticker)
         return fetcher.get_basic_financials()
     except Exception as e:
-        print(f"Error in basic_finance_tool: {e}")
+        logger.error("finance_ratio_tool failed | ticker=%s", ticker, exc_info=True)
         return None
 
 
@@ -101,9 +104,9 @@ def risk_assessment_tool(ticker):
         dict: The financial risk metrics data.
     """
     try:
-        print("\nUSING RISK_ASSESSMENT TOOL\n")
+        logger.debug("Tool invoked: risk_assessment | ticker=%s", ticker)
         fetcher = FinancialDataFetcher(ticker)
         return fetcher.get_risk_financials()
     except Exception as e:
-        print(f"Error in risk_finance_tool: {e}")
+        logger.error("risk_assessment_tool failed | ticker=%s", ticker, exc_info=True)
         return None

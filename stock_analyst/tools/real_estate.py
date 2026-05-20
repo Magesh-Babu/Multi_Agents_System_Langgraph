@@ -1,7 +1,10 @@
+import logging
 from typing import Literal
 from pydantic import BaseModel
 from langchain.tools import tool
 from pyscbwrapper import SCB
+
+logger = logging.getLogger(__name__)
 
 
 class RegionToolSchema(BaseModel):
@@ -34,7 +37,7 @@ def housing_price_index_tool(region):
         dataframe: The housing price index for the particular region.
     """
     try:
-        print("\nUSING HOUSING_PRICE TOOL\n")
+        logger.debug("Tool invoked: housing_price_index | region=%s", region)
         scb = SCB("en", "BO", "BO0501A", "FastpiPSRegAr")
         scb.set_query(
             region=[region],
@@ -43,4 +46,5 @@ def housing_price_index_tool(region):
         data = scb.get_data()
         return data
     except Exception as e:
+        logger.error("housing_price_index_tool failed | region=%s", region, exc_info=True)
         return f"An error occurred while retrieving data: {str(e)}"

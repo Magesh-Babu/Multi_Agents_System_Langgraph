@@ -1,12 +1,16 @@
 import json
+import logging
+import time
 from typing import AsyncIterator
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.schemas import AnalyzeRequest, AnalyzeResponse
 from api.dependencies import get_graph
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Stock Analyst — Multi-Agent API",
@@ -22,6 +26,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration = time.perf_counter() - start
+    logger.info("%s %s | %s | %.2fs", request.method, request.url.path, response.status_code, duration)
+    return response
 
 
 @app.get("/health")
