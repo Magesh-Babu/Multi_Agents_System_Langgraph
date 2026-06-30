@@ -1,5 +1,6 @@
 from typing import Literal, List, Union, Annotated
 from typing_extensions import TypedDict
+from langgraph.graph import MessagesState
 
 MEMBERS = [
     "Fundamental_Analysis_Agent",
@@ -33,3 +34,8 @@ class FinalResponse(TypedDict):
     ConversationalResponse type, providing a user-friendly response.
     """
     final_output: Union[Router, ConversationalResponse]
+
+
+class AgentState(MessagesState):
+    """MessagesState extended with routing data so each graph run is isolated."""
+    next_worker: List[str]

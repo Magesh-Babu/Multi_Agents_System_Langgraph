@@ -1,6 +1,6 @@
 import logging
 from typing import Sequence
-from langgraph.graph import MessagesState, END
+from langgraph.graph import END
 from langgraph.prebuilt import create_react_agent
 from langgraph.types import Command
 from langchain_core.messages import AIMessage
@@ -10,7 +10,7 @@ from langchain_community.tools.tavily_search import TavilySearchResults
 from stock_analyst.config.settings import settings
 
 logger = logging.getLogger(__name__)
-from stock_analyst.graph.state import FinalResponse
+from stock_analyst.graph.state import FinalResponse, AgentState
 from stock_analyst.agents.prompts import (
     ROUTER_AGENT_PROMPT,
     FUNDAMENTAL_ANALYSIS_AGENT_PROMPT,
@@ -88,35 +88,31 @@ final_agent = create_react_agent(
     prompt=FINAL_AGGREGATOR_AGENT_PROMPT,
 )
 
-# Module-level variable shared between router_node and condition
-_router_response = {}
-
-
-def router_node(state: MessagesState):
+def router_node(state: AgentState):
     """
     Determines the next agent or endpoint based on the user's query.
 
     Args:
-        state (MessagesState): The current conversation state containing messages.
+        state (AgentState): The current conversation state containing messages.
 
     Returns:
-        messages: Extracts last message of AIMessage Object.
+        dict: Updated messages and next_worker list stored in state.
     """
     try:
-        global _router_response
-        _router_response = router_agent.invoke(state)
-        output = _router_response["messages"][-1].content
-        if output == ["FINISH"]:
-            output = END
-        return {"messages": [
-            AIMessage(content=_router_response["messages"][-1].content, name="Router_Agent")
-        ]}
+        response = router_agent.invoke(state)
+        structured = response.get("structured_response", {})
+        final_output = structured.get("final_output", {})
+        next_workers = final_output.get("next_worker", [])
+        return {
+            "messages": [AIMessage(content=response["messages"][-1].content, name="Router_Agent")],
+            "next_worker": next_workers,
+        }
     except Exception as e:
         logger.error("router_node failed", exc_info=True)
-        return END
+        return {"next_worker": []}
 
 
-def fundamental_node(state: MessagesState):
+def fundamental_node(state: AgentState):
     """
     Processes financial queries and updates the conversation state.
 
@@ -139,7 +135,7 @@ def fundamental_node(state: MessagesState):
         return Command(goto=END)
 
 
-def sentiment_node(state: MessagesState):
+def sentiment_node(state: AgentState):
     """
     Processes news-related queries and updates the conversation state.
 
@@ -162,7 +158,7 @@ def sentiment_node(state: MessagesState):
         return Command(goto=END)
 
 
-def technical_node(state: MessagesState):
+def technical_node(state: AgentState):
     """
     Processes technical analysis queries and updates the conversation state.
 
@@ -185,7 +181,7 @@ def technical_node(state: MessagesState):
         return Command(goto=END)
 
 
-def risk_assessment_node(state: MessagesState):
+def risk_assessment_node(state: AgentState):
     """
     Processes risk analysis queries and updates the conversation state.
 
@@ -208,7 +204,7 @@ def risk_assessment_node(state: MessagesState):
         return Command(goto=END)
 
 
-def real_estate_node(state: MessagesState):
+def real_estate_node(state: AgentState):
     """
     Processes housing price-related queries and updates the conversation state.
 
@@ -231,7 +227,7 @@ def real_estate_node(state: MessagesState):
         return Command(goto=END)
 
 
-def final_node(state: MessagesState):
+def final_node(state: AgentState):
     """
     Aggregates responses from the specialized agents and returns a final summarized result.
 
@@ -254,20 +250,18 @@ def final_node(state: MessagesState):
         return Command(goto=END)
 
 
-def condition(state: MessagesState) -> Sequence[str]:
+def condition(state: AgentState) -> Sequence[str]:
     """
-    Determines the next agents to route to based on the Router_Agent's structured response.
+    Determines the next agents to route to based on next_worker stored in state.
 
     Args:
-        state (MessagesState): The current state containing message history.
+        state (AgentState): The current state containing routing data set by router_node.
 
     Returns:
         Sequence[str]: A list of agent names to route to, or ["__end__"] if none are specified.
     """
     try:
-        structured_response = _router_response.get("structured_response", {})
-        final_output = structured_response.get("final_output", {})
-        next_workers = final_output.get("next_worker", [])
+        next_workers = state.get("next_worker", [])
 
         if isinstance(next_workers, list) and next_workers and all(isinstance(w, str) for w in next_workers):
             return next_workers

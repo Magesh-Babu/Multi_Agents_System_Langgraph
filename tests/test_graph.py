@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from stock_analyst.graph.state import MEMBERS, Router, FinalResponse, ConversationalResponse
+from stock_analyst.graph.state import MEMBERS, Router, FinalResponse, ConversationalResponse, AgentState
 
 
 # ── State schema tests ────────────────────────────────────────────────────────
@@ -37,39 +37,25 @@ def test_compile_graph_succeeds(MockTavily, MockAzure):
 # ── Condition function ────────────────────────────────────────────────────────
 
 def test_condition_routes_to_single_agent():
-    import stock_analyst.graph.nodes as nodes
-    nodes._router_response = {
-        "structured_response": {
-            "final_output": {"next_worker": ["Technical_Analysis_Agent"]}
-        }
-    }
-    result = nodes.condition({})
+    from stock_analyst.graph.nodes import condition
+    result = condition({"messages": [], "next_worker": ["Technical_Analysis_Agent"]})
     assert result == ["Technical_Analysis_Agent"]
 
 
 def test_condition_routes_to_multiple_agents():
-    import stock_analyst.graph.nodes as nodes
-    nodes._router_response = {
-        "structured_response": {
-            "final_output": {"next_worker": ["Fundamental_Analysis_Agent", "Risk_Assessment_Agent"]}
-        }
-    }
-    result = nodes.condition({})
+    from stock_analyst.graph.nodes import condition
+    result = condition({"messages": [], "next_worker": ["Fundamental_Analysis_Agent", "Risk_Assessment_Agent"]})
     assert "Fundamental_Analysis_Agent" in result
     assert "Risk_Assessment_Agent" in result
 
 
 def test_condition_returns_end_when_no_workers():
-    import stock_analyst.graph.nodes as nodes
-    nodes._router_response = {
-        "structured_response": {"final_output": {}}
-    }
-    result = nodes.condition({})
+    from stock_analyst.graph.nodes import condition
+    result = condition({"messages": [], "next_worker": []})
     assert result == ["__end__"]
 
 
 def test_condition_returns_end_on_empty_response():
-    import stock_analyst.graph.nodes as nodes
-    nodes._router_response = {}
-    result = nodes.condition({})
+    from stock_analyst.graph.nodes import condition
+    result = condition({"messages": []})
     assert result == ["__end__"]

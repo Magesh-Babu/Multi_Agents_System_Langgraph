@@ -1,7 +1,7 @@
-from langgraph.graph import MessagesState, StateGraph, START, END
+from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
 
-from stock_analyst.graph.state import MEMBERS
+from stock_analyst.graph.state import MEMBERS, AgentState
 from stock_analyst.graph.nodes import (
     router_node,
     fundamental_node,
@@ -21,7 +21,7 @@ def compile_graph():
         CompiledStateGraph: A compiled graph ready for invocation.
     """
     memory = MemorySaver()
-    builder = StateGraph(MessagesState)
+    builder = StateGraph(AgentState)
 
     builder.add_node("Router_Agent", router_node)
     builder.add_node("Fundamental_Analysis_Agent", fundamental_node)
